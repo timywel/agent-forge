@@ -101,7 +101,7 @@ function generateAgentMd(agentYaml: Record<string, unknown>, systemContent: stri
   const id = String(meta.id ?? "");
   const name = String(meta.name ?? meta.id ?? "Unnamed Agent");
   const version = String(meta.version ?? "1.0.0");
-  const author = String(meta.author ?? "Wel的AI工坊");
+  const author = String(meta.author ?? "Wel");
   const rawDesc = String(meta.description ?? extractDescriptionFromSystem(systemContent));
   // 引号包裹 description，避免 YAML 解析器因冒号、换行符等字符报错
   const safeDesc = rawDesc.replace(/"/g, '\\"').replace(/\n/g, '\\n');

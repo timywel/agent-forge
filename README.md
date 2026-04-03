@@ -24,7 +24,7 @@
 | 重复冗余 | 5% | 过长 Objective、分号列表检测 |
 | 命名一致性 | 5% | kebab-case 规范 |
 
-**评分标准**：每维度 0-10 分，加权求和。满分 100/10。
+**评分标准**：每维度 0-10 分，加权求和。满分 10/10。
 
 ### 2. 批量优化（Batch Optimize）
 
@@ -267,7 +267,7 @@ id: marketing-tiktok-strategist
 name: Marketing TikTok Strategist
 version: 1.0.0
 description: TikTok 病毒式内容创作与增长策略
-author: Wel的AI工坊
+author: Wel (https://github.com/timywel)
 tags:
   - marketing
   - social-media
@@ -312,13 +312,12 @@ $ npx tsx scripts/run-review.ts --input ./test/my-agent/ --output reports/
    发现 Agent: 79 个
 
 📊 评审完成: 79 个 Agent
-   平均评分: 100/10
-   平均分（百分制）: 1000/100
+   平均评分: 10/10
    问题总数: 0 (0 错误, 0 警告, 0 提示)
 
 🏆 Top 5:
-   academic-anthropologist: ▓▓▓▓▓▓▓▓▓▓ 100/10
-   academic-geographer: ▓▓▓▓▓▓▓▓▓▓ 100/10
+   academic-anthropologist: ▓▓▓▓▓▓▓▓▓▓ 10/10
+   academic-geographer: ▓▓▓▓▓▓▓▓▓▓ 10/10
    ...
 
 📄 Markdown 报告: reports/agent-review-report-2026-04-03.md
@@ -359,5 +358,5 @@ npm run clean
 
 ---
 
-**维护者**: Wel的AI工坊
+**维护者**: [Wel](https://github.com/timywel)
 **许可**: MIT
