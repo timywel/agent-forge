@@ -1,6 +1,6 @@
 # agent-forge — Agent 评审与优化工具链
 
-> **版本**: 2.0.0 | **日期**: 2026-04-03 | **状态**: 生产就绪 | **维护者**: [Wel](https://github.com/timywel)
+> **版本**: 2.0.0 | **日期**: 2026-04-03 | **状态**: 生产就绪 | **维护者**: https://github.com/timywel
 
 `agent-forge` 是一个基于 LIAS（Lightweight Industrial Agent Specification）规范的 Agent 工程化工具。它像一位资深代码审查员，能对任意 Agent 项目进行全方位"体检"——从目录结构、身份定义、安全边界到代码质量、命名规范，9 大维度逐一打分，并自动生成优化方案。
 
@@ -269,7 +269,7 @@ id: marketing-tiktok-strategist
 name: Marketing TikTok Strategist
 version: 1.0.0
 description: TikTok 病毒式内容创作与增长策略
-author: Wel (https://github.com/timywel)
+author: https://github.com/timywel
 tags:
   - marketing
   - social-media
@@ -360,5 +360,5 @@ npm run clean
 
 ---
 
-**维护者**: [Wel](https://github.com/timywel)
+**维护者**: https://github.com/timywel
 **许可**: MIT
