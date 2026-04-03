@@ -1,236 +1,328 @@
-# agent-forge — 白泽 Agent 工具链
+# agent-forge — Agent 评审与优化工具链
 
-> **版本**: 1.0.0 | **日期**: 2026-03-31 | **状态**: 开发中
+> **版本**: 2.0.0 | **日期**: 2026-04-03 | **状态**: 生产就绪
 
-AGENT Validator + Converter + Optimizer 三位一体工具链，基于 BAIZE-AGENT-SPEC v2 规范。
+基于 LIAS（Lightweight Industrial Agent Specification）规范，为 Agent 项目提供评审、打分、优化、生成的一体化工具链。
 
 ---
 
-## 架构概览
+## 核心功能
+
+### 1. Agent 评审团（Review Board）
+
+9 个专业评审维度，并行评审所有 Agent 文件：
+
+| 评审维度 | 权重 | 说明 |
+|---|---|---|
+| 结构合规 | 15% | main.ts、prompts/、skills/ 等必需文件 |
+| 身份定义 | 20% | Role、Objective、SOP 质量 |
+| 安全规范 | 10% | safety.md 禁止行为、Fallback 逻辑 |
+| SKILL.md | 15% | YAML frontmatter、步骤完整性 |
+| 代码质量 | 10% | TypeScript 可读性、错误处理 |
+| 领域适配 | 10% | 能力与分类的匹配度 |
+| 描述准确性 | 10% | AGENT.md 与 system.md 一致性 |
+| 重复冗余 | 5% | 过长 Objective、分号列表检测 |
+| 命名一致性 | 5% | kebab-case 规范 |
+
+**评分标准**：每维度 0-10 分，加权求和。满分 100/10。
+
+### 2. 批量优化（Batch Optimize）
+
+基于评审报告自动修复问题：
+
+- `domain.primary` 补全（从目录路径提取领域）
+- `prompts/safety.md` 生成（标准安全红线）
+- `system.md Identity` 章节补全
+- `agent.yaml id` 与目录名一致性修正
+
+### 3. 运行时生成（Runtime Generate）
+
+根据 LIAS 规范模板，为 Agent 项目生成完整运行时代码：
+
+- `main.ts` — Agent 入口
+- `src/types.ts` — 类型定义
+- `src/provider.ts` — LLM 提供者配置
+- `src/loop.ts` — Agent 循环逻辑
+- `package.json` — 依赖配置
+- `tsconfig.json` — TypeScript 配置
+- `skills/index.ts` — Skill 工具注册
+
+### 4. SKILL.md 生成（Skills Generate）
+
+从 `prompts/system.md` 的 Capabilities 章节自动提取技能，生成符合 Agent Skills 规范的 SKILL.md 文件：
+
+```
+.claude/skills/{skill-name}/SKILL.md
+```
+
+### 5. 格式迁移（Migrate）
+
+将旧的 `agent.yaml` + `prompts/` 格式迁移为新的 `AGENT.md` Markdown 格式：
+
+- YAML frontmatter（结构化字段）
+- Markdown body（可读性表格）
+- 自动提取 description、domain、skills 等元数据
+
+---
+
+## 快速开始
+
+```bash
+# 克隆项目
+git clone https://github.com/timywel/agent-forge.git
+cd agent-forge
+
+# 安装依赖
+npm install
+
+# 验证 Agent 项目
+npx tsx src/cli/index.ts validate -i ./test/my-agent/
+
+# 运行评审团
+npx tsx scripts/run-review.ts --input ./test/my-agent/ --output reports/
+
+# 批量优化（基于评审报告）
+npx tsx scripts/batch-optimize.ts --input reports/agent-review-report-2026-04-03.json --force
+
+# 生成运行时文件
+npx tsx scripts/generate-runtime.ts --input ./test/my-agent/ --batch
+
+# 生成 SKILL.md
+npx tsx scripts/generate-skills.ts --input ./test/my-agent/ --batch
+
+# 格式迁移
+npx tsx src/cli/index.ts migrate --input ./test/my-agent/ --delete
+```
+
+---
+
+## 目录结构
 
 ```
 agent-forge/
 ├── src/
-│   ├── index.ts                 # 主入口（API 导出）
-│   ├── types/                   # 类型定义
-│   │   ├── common.ts            # 公共类型（验证结果、配置等）
-│   │   ├── spec.ts              # BAIZE-AGENT-SPEC v2 类型
-│   │   └── ir.ts                # 中间表示（IntermediateRepresentation）
-│   ├── validator/               # ① AGENT Validator
-│   │   ├── index.ts             # 验证器入口
-│   │   ├── reporter.ts          # 报告生成
+│   ├── cli/
+│   │   ├── index.ts          # CLI 入口（validate, convert, migrate）
+│   │   └── migrate.ts        # agent.yaml → AGENT.md 迁移
+│   ├── converter/
+│   │   ├── index.ts          # 转换器主入口
+│   │   ├── detector.ts       # 格式自动检测
+│   │   └── parsers/         # 多种格式解析器
+│   │       ├── agent-md.ts   # AGENT.md 解析
+│   │       ├── agent-manifest.ts  # AGENT.md YAML frontmatter
+│   │       └── ...
+│   ├── reviewer/
+│   │   ├── ReviewBoard.ts    # 评审管理（并行调度 9 个 Reviewer）
+│   │   ├── reviewers/        # 9 个专业评审器
+│   │   │   ├── structural.ts    # R001-R009 结构合规
+│   │   │   ├── identity.ts     # R010-R016 身份定义
+│   │   │   ├── safety.ts       # R020-R024 安全规范
+│   │   │   ├── skill-spec.ts   # R030-R037 SKILL.md 规范
+│   │   │   ├── code-quality.ts # R040-R046 代码质量
+│   │   │   ├── domain-fitness.ts # R050-R053 领域适配
+│   │   │   ├── desc-accuracy.ts # R060-R064 描述准确性
+│   │   │   ├── duplication.ts   # R070-R075 重复冗余
+│   │   │   └── naming.ts       # R080-R084 命名一致性
+│   │   └── reporters/        # 报告生成器
+│   │       ├── markdown.ts   # Markdown 报告
+│   │       └── json.ts       # JSON 报告（可被 batch-optimize.ts 消费）
+│   ├── validator/
+│   │   ├── index.ts         # 验证器入口
 │   │   └── rules/
-│   │       ├── structure.ts     # 目录结构验证
-│   │       ├── schema.ts        # agent.yaml Schema 验证
-│   │       ├── identity.ts      # system.md 内容验证
-│   │       └── skill.ts         # Skill 验证
-│   ├── converter/               # ② AGENT Converter
-│   │   ├── index.ts             # 转换器入口
-│   │   ├── detector.ts          # 格式检测器
-│   │   ├── generator.ts         # 标准目录生成器
-│   │   └── parsers/
-│   │       ├── bas.ts           # S1: BAS 格式
-│   │       ├── agent-md.ts      # S2: .agent.md
-│   │       ├── la.ts            # S3: Lightweight Agent
-│   │       ├── workflow.ts      # S4: Workflow YAML
-│   │       ├── plugin.ts        # S5: Plugin
-│   │       ├── natural-lang.ts  # S6: 自然语言（需 LLM）
-│   │       ├── openapi.ts       # S7: OpenAPI/Swagger
-│   │       └── mcp.ts           # S8: MCP Server
-│   ├── optimizer/               # ③ AGENT Optimizer
-│   │   ├── index.ts             # 优化器入口
-│   │   ├── analyzers/           # 质量分析
-│   │   │   ├── identity.ts      # 身份定义质量
-│   │   │   ├── skill.ts         # Skill 质量
-│   │   │   ├── completeness.ts  # 完整性
-│   │   │   └── consistency.ts   # 一致性
-│   │   └── enhancers/           # 自动优化
-│   │       ├── identity.ts      # 身份优化（LLM）
-│   │       ├── safety.ts        # 安全规则生成（LLM）
-│   │       └── skill.ts         # Skill 修复
-│   ├── llm/                     # LLM 客户端（槽位设计）
-│   │   ├── client.ts            # HTTP 客户端
-│   │   └── prompts.ts           # 提示词模板
-│   └── cli/
-│       └── index.ts             # CLI 入口
-├── tests/                       # 测试
+│   │       ├── lias.ts      # LIAS 规范验证（L070-L079）
+│   │       ├── identity.ts   # Identity 章节验证
+│   │       ├── skill.ts     # Skill 验证
+│   │       └── structure.ts  # 目录结构验证
+│   ├── types/
+│   │   ├── common.ts        # 公共类型
+│   │   ├── review.ts        # 评审结果类型定义
+│   │   ├── spec.ts         # BAIZE-AGENT-SPEC 类型
+│   │   └── ir.ts           # 中间表示类型
+│   └── optimizer/           # 优化器（分析 + 自动修复）
+├── scripts/
+│   ├── run-review.ts       # 评审团入口
+│   ├── batch-optimize.ts   # 批量优化（基于 JSON 报告）
+│   ├── generate-runtime.ts # 运行时文件生成
+│   ├── generate-skills.ts # SKILL.md 生成
+│   ├── analyze-issues.ts   # 问题分析脚本
+│   └── ...
+├── reports/
+│   ├── OPTIMIZATION-PLAN.md  # 优化方案文档
+│   └── agent-review-report-*.{md,json}  # 评审报告
 └── package.json
 ```
 
 ---
 
-## 三大核心模块
+## 评审维度详解
 
-### ① Validator — 规范检验器
+### R001-R009 结构合规（权重 15%）
 
-验证 Agent 目录是否符合 BAIZE-AGENT-SPEC v2 标准。
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R001 | ERROR | 缺少 main.ts 运行时入口 |
+| R002 | ERROR | 缺少 prompts/system.md |
+| R003 | ERROR | 缺少 prompts/safety.md |
+| R004 | ERROR | 缺少 src/ 目录 |
+| R006 | ERROR | 缺少 package.json |
 
-**验证检查项 (V001-V053)**:
+### R010-R016 身份定义（权重 20%）
 
-| 类别 | 检查码 | 说明 | 级别 |
-|------|--------|------|------|
-| 结构 | V001 | agent.yaml 必须存在 | ERROR |
-| 结构 | V002 | prompts/system.md 必须存在 | ERROR |
-| 结构 | V003 | safety_rules.md 推荐存在 | WARN |
-| Schema | V012 | apiVersion = "baize.io/v2" | ERROR |
-| Schema | V015-V020 | metadata 必需字段完整性 | ERROR |
-| Identity | V030-V031 | system.md 行数 20-80 | WARN |
-| Identity | V032-V033 | system.md 必需章节 | ERROR |
-| Identity | V036 | 角色描述不应泛化 | WARN |
-| Skill | V042 | Skill 名称 kebab-case | ERROR |
-| Skill | V045 | tool.name snake_case | ERROR |
-| Skill | V049-V051 | executor.ts 双导出检查 | ERROR |
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R010 | ERROR | system.md 内容为空 |
+| R011 | WARNING | Agent 描述缺失或过短 |
+| R012 | ERROR | system.md 缺少必需章节 |
+| R013 | WARNING | 缺少 Identity 章节 |
+| R014 | WARNING | 缺少 Capabilities 章节 |
+| R015 | WARNING | Objective 过于泛化 |
+| R016 | WARNING | Objective 过长（>200字符） |
 
-### ② Converter — 转换器
+### R020-R024 安全规范（权重 10%）
 
-支持 **8 种输入格式** 自动转换为标准 BaizeAgent 目录：
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R020 | ERROR | 缺少安全定义文件 |
+| R021 | WARNING | 缺少禁止行为（Prohibited）定义 |
+| R022 | INFO | 禁止行为定义过少（<3项） |
+| R023 | WARNING | 缺少 Fallback Logic |
+| R024 | WARNING | 安全内容过短 |
 
-| 编号 | 格式 | 需要 LLM | 说明 |
-|------|------|----------|------|
-| S1 | BAS | ❌ | AGENT.md + BAS.yaml |
-| S2 | .agent.md | ❌ | Frontmatter Markdown |
-| S3 | LA | ❌ | prompts/ + skills/ + src/ |
-| S4 | Workflow | ❌ | 多步工作流 YAML |
-| S5 | Plugin | ❌ | Claude Plugin |
-| S6 | 自然语言 | ✅ | 纯文本描述 |
-| S7 | OpenAPI | ❌ | API 定义 |
-| S8 | MCP | ❌ | MCP Server |
+### R030-R037 SKILL.md 规范（权重 15%）
 
-**转换流程**: 格式检测 → 解析为 IR → 生成标准目录 → 验证
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R030 | INFO | 无 skills/ 目录 |
+| R031 | WARNING | skills/ 目录无 SKILL.md |
+| R032 | WARNING | SKILL.md 缺少 YAML frontmatter |
+| R033 | WARNING | SKILL.md frontmatter YAML 格式错误 |
+| R034 | WARNING | SKILL.md 缺少 name 字段 |
+| R035 | WARNING | SKILL.md name 不符合 kebab-case |
+| R036 | WARNING | SKILL.md description 过短 |
+| R037 | INFO | SKILL.md 无编号步骤定义 |
 
-### ③ Optimizer — 优化器
+### R040-R046 代码质量（权重 10%）
 
-四维质量分析 + 自动/LLM 优化:
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R040 | INFO | 无 TypeScript 文件 |
+| R041 | INFO | TypeScript 文件内容过短 |
+| R042 | WARNING | 异步代码缺少 try-catch |
+| R043 | INFO | console 调用过多 |
+| R044 | INFO | 存在 TODO/FIXME |
+| R045 | INFO | 文件无有效导出 |
+| R046 | INFO | 文件过长（>100行） |
 
-| 维度 | 权重 | 说明 |
-|------|------|------|
-| 身份定义 | 30% | 角色具体性、能力聚焦、风格可操作 |
-| Skill 质量 | 25% | 命名规范、Schema 完整、executor 规范 |
-| 完整性 | 25% | 必需文件、推荐字段覆盖 |
-| 一致性 | 20% | ID/目录名匹配、注册表匹配 |
+### R050-R053 领域适配（权重 10%）
 
----
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R050 | WARNING | 声明领域与目录不匹配 |
+| R051 | INFO | 未声明领域 |
+| R052 | INFO | 能力关键词与领域不匹配 |
+| R053 | INFO | 无法确定领域且未声明 |
 
-## 使用方式
+### R060-R064 描述准确性（权重 10%）
 
-### CLI 命令
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R060 | ERROR | 缺少任何描述 |
+| R061 | WARNING | AGENT.md 与 system.md 重叠度低 |
+| R062 | WARNING | id/name 与目录名不一致 |
+| R063 | WARNING | 描述过于泛化 |
 
-```bash
-# ── 验证 ──
-npx tsx src/cli/index.ts validate -i ./my-agent/
+### R070-R075 重复冗余（权重 5%）
 
-# ── 转换 ──
-npx tsx src/cli/index.ts convert -i ./source/ -o ./output/
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R070 | INFO | Objective 过长 |
+| R071 | INFO | Objective 包含分号列表 |
+| R072 | INFO | 使用分号分隔的列表 |
+| R073 | INFO | 存在完全重复的行 |
+| R074 | INFO | 存在完全重复的标题 |
+| R075 | INFO | 相邻段落内容高度相似 |
 
-# ── 从自然语言创建（需 LLM） ──
-npx tsx src/cli/index.ts create -i "安全工程师，擅长代码审计" -o ./agents/security/
+### R080-R084 命名一致性（权重 5%）
 
-# ── 质量分析 ──
-npx tsx src/cli/index.ts analyze -i ./my-agent/
-
-# ── 优化 ──
-npx tsx src/cli/index.ts optimize -i ./my-agent/
-npx tsx src/cli/index.ts optimize -i ./my-agent/ --use-llm
-
-# ── 格式检测 ──
-npx tsx src/cli/index.ts detect -i ./some-input/
-
-# ── 显示支持格式 ──
-npx tsx src/cli/index.ts formats
-```
-
-### API 调用
-
-```typescript
-import { validate, convert, analyze, optimize } from "agent-forge";
-
-// 验证
-const vResult = validate("./my-agent");
-console.log(vResult.passed, vResult.errors);
-
-// 转换
-const cResult = await convert({
-  input: "./workflow.yaml",
-  output: "./agents/my-agent",
-  config: DEFAULT_FORGE_CONFIG,
-});
-
-// 分析
-const aResult = analyze("./my-agent");
-console.log(aResult.score.overall); // 0-100
-
-// 优化
-const oResult = await optimize({
-  agentDir: "./my-agent",
-  autoFix: true,
-  useLLM: true,
-  config: DEFAULT_FORGE_CONFIG,
-});
-```
+| 代码 | 严重性 | 说明 |
+|---|---|---|
+| R080 | ERROR | 目录名不符合 kebab-case |
+| R081 | WARNING | AGENT.md/agent.yaml id 不符合规范 |
+| R082 | WARNING | skills/ 目录文件名不符合规范 |
+| R083 | WARNING | src/ 目录文件名不符合规范 |
 
 ---
 
-## LLM 槽位设计
+## AGENT.md 格式规范
 
-```
-┌─────────────────────────────────────┐
-│          agent-forge                │
-│                                     │
-│  Validator: 纯规则，无 LLM         │
-│  Converter: S6 自然语言需要 LLM    │
-│  Optimizer: 深度优化需要 LLM       │
-│                                     │
-│  ┌───────────────────┐              │
-│  │   LLM Client 槽位  │             │
-│  │                   │              │
-│  │  测试: 127.0.0.1  │              │
-│  │  :15721           │              │
-│  │                   │              │
-│  │  正式: 外部注入    │             │
-│  └───────────────────┘              │
-└─────────────────────────────────────┘
-```
+### 文件位置
 
-- **测试阶段**: 调用本地代理 `http://127.0.0.1:15721`
-- **正式使用**: 通过 API 接口暴露给 Agent，Agent 连接中间层 LLM API
-- **agent-forge 不管理 LLM**: 仅提供 `ILLMClient` 接口，支持注入
+Agent 项目根目录（与 main.ts 同级）
 
----
-
-## 集成方式
-
-### 1. 独立 CLI 工具
-
-```bash
-agent-forge validate -i ./agent-dir
-agent-forge convert -i ./source -o ./output
-```
-
-### 2. baize-loop 集成
-
-```typescript
-import { validate, convert, optimize } from "agent-forge";
-
-// 在 baize-loop 流程中调用
-const result = await convert({ input, output, config });
-```
-
-### 3. 作为 Agent Skill
-
-将 agent-forge 注册为 Harness 可调用的 Skill：
+### Frontmatter（结构化字段）
 
 ```yaml
-# skill.yaml
-name: "agent-forge"
-tool:
-  name: "agent_forge"
-  description: "验证、转换、优化 Agent 定义"
-  input_schema:
-    type: object
-    properties:
-      action: { type: string, enum: [validate, convert, optimize] }
-      input: { type: string }
-      output: { type: string }
+---
+id: marketing-tiktok-strategist
+name: Marketing TikTok Strategist
+version: 1.0.0
+description: TikTok 病毒式内容创作与增长策略
+author: Wel的AI工坊
+tags:
+  - marketing
+  - social-media
+  - tiktok
+domain:
+  primary: marketing
+  secondary:
+    - social-media
+    - content-creation
+---
+```
+
+### Body（可读性表格）
+
+```markdown
+## Metadata
+
+| Field | Value |
+|---|---|
+| Description | TikTok 病毒式内容创作与增长策略 |
+| Tags | marketing, social-media, tiktok |
+
+## Skills
+
+**Required**:
+- viral-content-creation
+- algorithm-mastery
+
+**Optional**:
+- creator-collaboration
+```
+
+---
+
+## 评审报告示例
+
+```bash
+$ npx tsx scripts/run-review.ts --input ./test/my-agent/ --output reports/
+
+🔍 Agent 评审团启动
+   输入路径: ./test/my-agent
+   发现 Agent: 79 个
+
+📊 评审完成: 79 个 Agent
+   平均评分: 100/10
+   平均分（百分制）: 1000/100
+   问题总数: 0 (0 错误, 0 警告, 0 提示)
+
+🏆 Top 5:
+   academic-anthropologist: ▓▓▓▓▓▓▓▓▓▓ 100/10
+   academic-geographer: ▓▓▓▓▓▓▓▓▓▓ 100/10
+   ...
+
+📄 Markdown 报告: reports/agent-review-report-2026-04-03.md
+📊 JSON 报告: reports/agent-review-report-2026-04-03.json
 ```
 
 ---
@@ -238,13 +330,34 @@ tool:
 ## 开发
 
 ```bash
-npm install          # 安装依赖
-npm test             # 运行测试
-npm run build        # 构建
-npm run dev -- validate -i ./agent  # 开发模式运行
+# 安装依赖
+npm install
+
+# 类型检查
+npx tsc --noEmit
+
+# 运行测试
+npm test
+
+# 构建
+npm run build
+
+# 开发模式（热重载）
+npm run dev
+
+# 清理 dist
+npm run clean
 ```
 
 ---
 
-**基于**: BAIZE-AGENT-SPEC v2 + BAIZE-AGENT-CONVERTER v1
-**维护者**: AI Product Lab
+## 相关规范
+
+- **LIAS** — Lightweight Industrial Agent Specification（主规范）
+- **BAIZE-AGENT-SPEC v2** — Agent 定义格式标准
+- **Agent Skills** — Skill 工具规范
+
+---
+
+**维护者**: Wel的AI工坊
+**许可**: MIT
