@@ -1,67 +1,69 @@
 # agent-forge — Agent 评审与优化工具链
 
-> **版本**: 2.0.0 | **日期**: 2026-04-03 | **状态**: 生产就绪
+> **版本**: 2.0.0 | **日期**: 2026-04-03 | **状态**: 生产就绪 | **维护者**: [Wel](https://github.com/timywel)
 
-基于 LIAS（Lightweight Industrial Agent Specification）规范，为 Agent 项目提供评审、打分、优化、生成的一体化工具链。
+`agent-forge` 是一个基于 LIAS（Lightweight Industrial Agent Specification）规范的 Agent 工程化工具。它像一位资深代码审查员，能对任意 Agent 项目进行全方位"体检"——从目录结构、身份定义、安全边界到代码质量、命名规范，9 大维度逐一打分，并自动生成优化方案。
+
+**一句话定位**：让烂 Agent 变好，让好 Agent 变精。
 
 ---
 
-## 核心功能
+### 1. 🔍 Agent 评审团（Review Board）
 
-### 1. Agent 评审团（Review Board）
-
-9 个专业评审维度，并行评审所有 Agent 文件：
+9 个专业维度对 Agent 项目进行"全身体检"，并行评审 + 量化打分：
 
 | 评审维度 | 权重 | 说明 |
 |---|---|---|
-| 结构合规 | 15% | main.ts、prompts/、skills/ 等必需文件 |
-| 身份定义 | 20% | Role、Objective、SOP 质量 |
-| 安全规范 | 10% | safety.md 禁止行为、Fallback 逻辑 |
-| SKILL.md | 15% | YAML frontmatter、步骤完整性 |
-| 代码质量 | 10% | TypeScript 可读性、错误处理 |
-| 领域适配 | 10% | 能力与分类的匹配度 |
-| 描述准确性 | 10% | AGENT.md 与 system.md 一致性 |
-| 重复冗余 | 5% | 过长 Objective、分号列表检测 |
-| 命名一致性 | 5% | kebab-case 规范 |
+| 结构合规 | 15% | main.ts、prompts/、skills/ 等必需文件是否存在 |
+| 身份定义 | 20% | Role、Objective、SOP 定义是否清晰完整 |
+| 安全规范 | 10% | safety.md 禁止行为是否完备、Fallback 是否有效 |
+| SKILL.md | 15% | YAML frontmatter 是否规范、步骤定义是否完整 |
+| 代码质量 | 10% | TypeScript 可读性、错误处理、代码健壮性 |
+| 领域适配 | 10% | Agent 能力与声明领域是否匹配 |
+| 描述准确性 | 10% | AGENT.md 与 system.md 描述是否一致 |
+| 重复冗余 | 5% | 检测过长 Objective、分号列表、重复段落 |
+| 命名一致性 | 5% | kebab-case 规范执行情况 |
 
-**评分标准**：每维度 0-10 分，加权求和。满分 10/10。
+**评分标准**：每维度 0-10 分，权重加权求和。满分 10/10。
 
-### 2. 批量优化（Batch Optimize）
+### 2. 🔧 批量优化（Batch Optimize）
 
-基于评审报告自动修复问题：
+基于评审报告自动修复问题，省去手动逐个改的麻烦：
 
-- `domain.primary` 补全（从目录路径提取领域）
-- `prompts/safety.md` 生成（标准安全红线）
-- `system.md Identity` 章节补全
-- `agent.yaml id` 与目录名一致性修正
+- **domain.primary 补全** — 自动从目录路径提取领域
+- **safety.md 生成** — 为缺失安全定义的 Agent 补充标准安全红线
+- **system.md Identity 补全** — 修复身份定义章节缺失问题
+- **agent.yaml id 修正** — 保持 id 与目录名一致
 
-### 3. 运行时生成（Runtime Generate）
+### 3. ⚙️ 运行时生成（Runtime Generate）
 
-根据 LIAS 规范模板，为 Agent 项目生成完整运行时代码：
+根据 LIAS 规范模板，一键生成完整的 Agent 运行时代码骨架：
 
-- `main.ts` — Agent 入口
+- `main.ts` — Agent 入口（带 LLM 调用循环）
 - `src/types.ts` — 类型定义
-- `src/provider.ts` — LLM 提供者配置
-- `src/loop.ts` — Agent 循环逻辑
+- `src/provider.ts` — LLM 提供者配置（支持 Anthropic/OpenAI）
+- `src/loop.ts` — Agent 循环逻辑（ReAct 模式）
 - `package.json` — 依赖配置
 - `tsconfig.json` — TypeScript 配置
 - `skills/index.ts` — Skill 工具注册
 
-### 4. SKILL.md 生成（Skills Generate）
+### 4. 📋 SKILL.md 生成（Skills Generate）
 
-从 `prompts/system.md` 的 Capabilities 章节自动提取技能，生成符合 Agent Skills 规范的 SKILL.md 文件：
+从 `prompts/system.md` 的 Capabilities 章节智能提取技能，自动生成符合 Agent Skills 规范的 SKILL.md 文件：
 
 ```
 .claude/skills/{skill-name}/SKILL.md
 ```
 
-### 5. 格式迁移（Migrate）
+每个 Skill 包含：YAML frontmatter（name/description/tools）+ 使用步骤 + 输入输出示例 + 边界情况。
 
-将旧的 `agent.yaml` + `prompts/` 格式迁移为新的 `AGENT.md` Markdown 格式：
+### 5. 🔄 格式迁移（Migrate）
 
-- YAML frontmatter（结构化字段）
-- Markdown body（可读性表格）
-- 自动提取 description、domain、skills 等元数据
+将旧的 `agent.yaml` 格式升级为现代的 `AGENT.md` Markdown 格式，YAML frontmatter + 可读性表格，一目了然：
+
+- 自动提取 description、domain、tags、skills 等元数据
+- 支持批量迁移整个 Agent 仓库
+- 可选删除旧 `agent.yaml` 文件
 
 ---
 
