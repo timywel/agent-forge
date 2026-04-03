@@ -1,0 +1,9 @@
+import { createProvider } from "@baize-loop/sdk";
+
+export const provider = createProvider({
+  type: "{{PROVIDER_TYPE}}",
+  model: "{{MODEL}}",
+  apiKey: process.env.{{API_KEY_VAR}},
+});
+
+export const llm = provider.createClient();

@@ -1,0 +1,28 @@
+import { Tool, ToolResult, z } from "@anthropic/sdk";
+
+// --- Schema ---
+export const {{UPPER_SNAKE_NAME}}_SCHEMA_JSON = {{SCHEMA_JSON}};
+export const {{name}}_inputSchema = z.object({{SCHEMA_DEF}});
+
+// --- Tool Definition ---
+export const {{toolName}}_TOOL: Tool<typeof {{name}}_inputSchema> = {
+  name: "{{toolName}}",
+  description: `{{description}}`,
+  inputSchema: {
+    type: "object",
+    properties: {{SCHEMA_PROPS}},
+    required: [{{REQUIRED_LIST}}],
+  },
+  async execute(args, context) {
+    // --- Harness Validation ---
+    {{HARNESS_CHECKS}}
+
+    // --- Handler Logic ---
+    try {
+      {{HANDLER_CODE}}
+      return { result: output, format: "json" };
+    } catch (error) {
+      return { result: { error: error instanceof Error ? error.message : String(error) }, format: "json" };
+    }
+  }
+}

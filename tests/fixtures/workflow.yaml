@@ -1,0 +1,14 @@
+name: "security-audit"
+description: "安全审计全流程"
+steps:
+  - name: "代码扫描"
+    skill: "code-review"
+    description: "对代码进行安全扫描"
+  - name: "威胁建模"
+    skill: "threat-model"
+    description: "分析系统威胁"
+    depends_on: ["代码扫描"]
+  - name: "生成报告"
+    skill: "report"
+    description: "汇总结果生成报告"
+    depends_on: ["代码扫描", "威胁建模"]

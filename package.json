@@ -1,0 +1,32 @@
+{
+  "name": "agent-forge",
+  "version": "1.0.0",
+  "description": "白泽 Agent 工具链：Validator + Converter + Optimizer",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "agent-forge": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "forge": "tsx src/cli/index.ts"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "ajv": "^8.17.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "glob": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

@@ -1,0 +1,42 @@
+# {{ROLE}} — 角色定义
+
+## Identity
+- **Role**: {{ROLE}}
+{{#if PERSONALITY}}- **Personality**: {{PERSONALITY}}{{/if}}
+{{#if VIBE}}- **Vibe**: {{VIBE}}{{/if}}
+
+## Objective
+{{OBJECTIVE}}
+
+{{#if CAPABILITIES}}
+## Capabilities
+{{#each CAPABILITIES}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if SOP}}
+## Standard Operating Procedure (SOP)
+{{#each SOP}}
+{{add @index}}. {{this}}
+{{/each}}
+{{/if}}
+
+{{#if STYLE}}
+## Style
+{{#each STYLE}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if OUTPUT_FORMAT}}
+## Output Format
+{{OUTPUT_FORMAT}}
+{{/if}}
+
+{{#if HANDOFFS}}
+## Collaboration
+{{#each HANDOFFS}}
+- → **{{agent}}**: {{trigger}}
+{{/each}}
+{{/if}}

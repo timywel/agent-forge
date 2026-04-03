@@ -1,0 +1,20 @@
+# Safety — {{AGENT_NAME}}
+
+## Prohibited Actions
+{{#each PROHIBITED}}
+- ❌ {{this}}
+{{/each}}
+
+{{#if CONSTRAINTS}}
+## Domain Constraints
+{{#each CONSTRAINTS}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if FALLBACK}}
+## Fallback Logic
+{{#each FALLBACK}}
+- {{this}}
+{{/each}}
+{{/if}}

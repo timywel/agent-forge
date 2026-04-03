@@ -1,0 +1,25 @@
+import { ToolResult, ToolUseContext } from "@anthropic/sdk";
+{{IMPORTS}}
+
+const SYSTEM = await loadPrompts("prompts/system.md");
+const SAFETY = await loadPrompts("prompts/safety.md");
+
+const tools = [{{TOOL_LIST}}];
+
+async function loop(input: string, context: ToolUseContext): Promise<string> {
+  const prompt = `${SYSTEM}\n\n${SAFETY}\n\n## Input\n${input}`;
+  const response = await llm.chat(prompt, tools);
+
+  if (response.content.type === "text") return response.content.text;
+  if (response.content.type === "tool_use") {
+    const tool = tools.find(t => t.name === response.content.name);
+    if (!tool) return `Error: unknown tool ${response.content.name}`;
+    const result = await tool.execute(response.content.input, context);
+    return await loop(`${input}\n\n[Tool: ${response.content.name}]\nResult: ${JSON.stringify(result)}`, context);
+  }
+  return "Error: unexpected response type";
+}
+
+export async function run(input: string, context: ToolUseContext): Promise<string> {
+  return loop(input, context);
+}
