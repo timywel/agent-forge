@@ -39,7 +39,9 @@ const CATEGORY_DOMAIN_MAP: Record<string, string> = {
 };
 
 export function parseAgentMd(filePath: string): LIASManifest {
-  const content = fs.readFileSync(filePath, "utf-8");
+  const stat = fs.statSync(filePath);
+  const agentMdPath = stat.isDirectory() ? path.join(filePath, "AGENT.md") : filePath;
+  const content = fs.readFileSync(agentMdPath, "utf-8");
 
   // 解析 Frontmatter
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);

@@ -12,12 +12,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, "..", "fixtures");
 
 describe("LIAS Detector", () => {
-  it("应检测 lias-best 为 lias 格式", () => {
+  it("应检测 lias-best 为 agent-md 格式（AGENT.md 优先）", () => {
     const format = detectFormat(path.join(FIXTURES, "lias-best"));
-    expect(format).toBe("lias");
+    expect(format).toBe("agent-md");
   });
 
-  it("应检测 lias-worst 为 lias 格式", () => {
+  it("应检测 lias-worst 为 lias 格式（无 AGENT.md）", () => {
     const format = detectFormat(path.join(FIXTURES, "lias-worst"));
     expect(format).toBe("lias");
   });
@@ -38,7 +38,7 @@ describe("LIAS Converter (end-to-end)", () => {
     }
   });
 
-  it("应成功转换 lias-best 为 LIAS 项目", async () => {
+  it("应成功转换 lias-best（agent-md 格式）为 LIAS 项目", async () => {
     const result = await convert({
       input: path.join(FIXTURES, "lias-best"),
       output: outputDir,
